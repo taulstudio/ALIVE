@@ -2,306 +2,112 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Esports Scoreboard Overlay with Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Stats Table</title>
   <style>
     body {
-      margin: 0;
-      font-family: 'Orbitron', sans-serif;
-      background: #0a0a0a;
-      color: #fff;
-    }
-
-    #controls {
-      padding: 10px;
-      background: #111;
+      background-color: #111;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    button {
-      background: #222;
-      border: none;
-      color: #fff;
-      padding: 8px 12px;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
-    #dashboard {
-      padding: 10px;
-      background: #222;
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    label {
-      font-size: 14px;
-      margin-right: 6px;
-    }
-
-    input[type="color"] {
-      cursor: pointer;
-      width: 40px;
-      height: 28px;
-      border: none;
-      background: none;
-      padding: 0;
-    }
-
-    #scoreboard {
+      justify-content: center;
       padding: 20px;
     }
-
     table {
-      width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    th,
-    td {
-      padding: 12px;
+      background-color: #222;
+      width: 600px;
       text-align: left;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 14px;
     }
-
-    tr {
-      animation: fadeIn 0.5s ease-in-out;
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #444;
     }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    th {
+      background-color: #ff9900;
+      color: black;
+      text-align: center;
     }
-
+    td {
+      vertical-align: middle;
+    }
     .logo {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      vertical-align: middle;
     }
-
-    .alive-icons img {
-      width: 20px;
-      height: 20px;
-      margin-right: 2px;
+    .status-bar {
+      display: flex;
+      gap: 2px;
     }
-
-    .kills {
+    .status-bar div {
+      width: 6px;
+      height: 12px;
+    }
+    .alive { background-color: #00ff00; }
+    .dead { background-color: red; }
+    .outzone { background-color: #00ccff !important; }
+    .rank {
       font-weight: bold;
-      text-shadow: 0 0 5px #ff5050;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div id="controls">
-    <button onclick="showOverlay('alive')">Show Alive Scoreboard</button>
-    <button onclick="showOverlay('top3')">Show Top 3 Alive</button>
-    <button onclick="showOverlay('eliminated')">Show Eliminated Teams</button>
-  </div>
 
-  <div id="dashboard">
-    <label for="teamNameColor">Team Name Color:</label>
-    <input type="color" id="teamNameColor" name="teamNameColor" value="#00ff00" />
-
-    <label for="killsColor">Kills Color:</label>
-    <input type="color" id="killsColor" name="killsColor" value="#ff5050" />
-
-    <label for="rowColor1">Row 1 BG Color:</label>
-    <input type="color" id="rowColor1" name="rowColor1" value="#111111" />
-
-    <label for="rowColor2">Row 2 BG Color:</label>
-    <input type="color" id="rowColor2" name="rowColor2" value="#222222" />
-  </div>
-
-  <div id="scoreboard">
-    <table id="scoreTable">
-      <thead>
-        <tr>
-          <th>Logo</th>
-          <th>Team</th>
-          <th>Alive</th>
-          <th>Kills</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Team Name</th>
+        <th>Fin.</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
 
   <script>
-    const sheetUrl =
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vSi8hg0w9o8dNFGzyNRNtuyS2L8JYeF5vNJerQzNGk0LPSXv1sUHkk5m6INRDVToXB5k7XlTphG3YuL/pub?gid=0&single=true&output=csv";
-    const aliveIcon = "https://cdn-icons-png.flaticon.com/512/190/190411.png";
-    const deadIcon = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png";
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSi8hg0w9o8dNFGzyNRNtuyS2L8JYeF5vNJerQzNGk0LPSXv1sUHkk5m6INRDVToXB5k7XlTphG3YuL/pub?gid=97251306&single=true&output=csv';
 
-    // Default colors (will be overwritten by localStorage or dashboard inputs)
-    let columnColors = {
-      name: "#00ff00",
-      kills: "#ff5050"
-    };
+    fetch(csvUrl)
+      .then(response => response.text())
+      .then(csvText => {
+        const rows = csvText.trim().split('\n').map(row => row.split(','));
+        const tbody = document.getElementById('table-body');
 
-    let rowColors = ["#111111", "#222222"];
+        for (let i = 3; i <= 14 && i < rows.length; i++) {
+          const row = rows[i];
+          const logo = row[1];       // Column B
+          const teamName = row[2];   // Column C
+          const alive = parseInt(row[3]); // Column D
+          const kill = parseInt(row[4]);  // Column E
+          const outZone = row[5].trim().toUpperCase() === 'TRUE'; // Column F
 
-    // Fetch data from Google Sheet
-    async function fetchData() {
-      const res = await fetch(sheetUrl);
-      const text = await res.text();
-      const rows = text.trim().split("\n").slice(37, 49); // rows E38–E49
+          const tr = document.createElement('tr');
 
-      const allTeams = rows.map((row) => {
-        const cols = row.split(",");
-        return {
-          logo: cols[2] || "",
-          name: cols[4] || "",
-          kills: parseInt(cols[6]) || 0,
-          alive: parseInt(cols[25]) || 0
-        };
-      });
+          const statusHtml = Array.from({ length: 4 }, (_, idx) => {
+            if (outZone) {
+              return `<div class="outzone"></div>`;
+            }
+            const baseClass = idx < alive ? 'alive' : 'dead';
+            return `<div class="${baseClass}"></div>`;
+          }).join('');
 
-      window.allTeams = allTeams;
-      showOverlay("alive");
-    }
+          tr.innerHTML = `
+            <td class="rank">${i - 2}</td>
+            <td><img src="${logo}" class="logo" /> ${teamName}</td>
+            <td style="text-align:center">${kill}</td>
+            <td><div class="status-bar">${statusHtml}</div></td>
+          `;
 
-    // Render table
-    function showOverlay(type) {
-      const tbody = document.querySelector("#scoreTable tbody");
-      tbody.innerHTML = "";
-
-      let filtered = [];
-      if (type === "alive") {
-        filtered = window.allTeams;
-      } else if (type === "top3") {
-        filtered = [...window.allTeams]
-          .sort((a, b) => b.alive - a.alive)
-          .slice(0, 3);
-      } else if (type === "eliminated") {
-        filtered = window.allTeams.filter((t) => t.alive === 0);
-      }
-
-      filtered.forEach((team, index) => {
-        const tr = document.createElement("tr");
-        // Apply alternating row background colors from dashboard
-        tr.style.backgroundColor = rowColors[index % rowColors.length];
-
-        // Logo cell
-        const logoTd = document.createElement("td");
-        const img = document.createElement("img");
-        img.src = team.logo;
-        img.alt = team.name;
-        img.className = "logo";
-        logoTd.appendChild(img);
-        tr.appendChild(logoTd);
-
-        // Team name cell with dashboard color
-        const teamTd = document.createElement("td");
-        teamTd.textContent = team.name;
-        teamTd.style.color = columnColors.name;
-        tr.appendChild(teamTd);
-
-        // Alive icons cell
-        const aliveTd = document.createElement("td");
-        const aliveDiv = document.createElement("div");
-        aliveDiv.className = "alive-icons";
-        for (let i = 0; i < 4; i++) {
-          const icon = document.createElement("img");
-          icon.src = i < team.alive ? aliveIcon : deadIcon;
-          icon.alt = i < team.alive ? "Alive" : "Dead";
-          if (i < team.alive) {
-            icon.style.filter = "drop-shadow(0 0 4px gold)";
-          }
-          aliveDiv.appendChild(icon);
+          tbody.appendChild(tr);
         }
-        aliveTd.appendChild(aliveDiv);
-        tr.appendChild(aliveTd);
-
-        // Kills cell with dashboard color
-        const killTd = document.createElement("td");
-        killTd.textContent = team.kills;
-        killTd.style.color = columnColors.kills;
-        killTd.className = "kills";
-        tr.appendChild(killTd);
-
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Load colors from localStorage or set defaults
-    function loadColors() {
-      const storedNameColor = localStorage.getItem("teamNameColor");
-      const storedKillsColor = localStorage.getItem("killsColor");
-      const storedRowColor1 = localStorage.getItem("rowColor1");
-      const storedRowColor2 = localStorage.getItem("rowColor2");
-
-      if (storedNameColor) {
-        columnColors.name = storedNameColor;
-        document.getElementById("teamNameColor").value = storedNameColor;
-      }
-      if (storedKillsColor) {
-        columnColors.kills = storedKillsColor;
-        document.getElementById("killsColor").value = storedKillsColor;
-      }
-      if (storedRowColor1) {
-        rowColors[0] = storedRowColor1;
-        document.getElementById("rowColor1").value = storedRowColor1;
-      }
-      if (storedRowColor2) {
-        rowColors[1] = storedRowColor2;
-        document.getElementById("rowColor2").value = storedRowColor2;
-      }
-    }
-
-    // Save colors to localStorage
-    function saveColors() {
-      localStorage.setItem("teamNameColor", columnColors.name);
-      localStorage.setItem("killsColor", columnColors.kills);
-      localStorage.setItem("rowColor1", rowColors[0]);
-      localStorage.setItem("rowColor2", rowColors[1]);
-    }
-
-    // Setup color pickers event listeners
-    function setupColorPickers() {
-      document.getElementById("teamNameColor").addEventListener("input", (e) => {
-        columnColors.name = e.target.value;
-        saveColors();
-        showOverlay("alive");
-      });
-
-      document.getElementById("killsColor").addEventListener("input", (e) => {
-        columnColors.kills = e.target.value;
-        saveColors();
-        showOverlay("alive");
-      });
-
-      document.getElementById("rowColor1").addEventListener("input", (e) => {
-        rowColors[0] = e.target.value;
-        saveColors();
-        showOverlay("alive");
-      });
-
-      document.getElementById("rowColor2").addEventListener("input", (e) => {
-        rowColors[1] = e.target.value;
-        saveColors();
-        showOverlay("alive");
-      });
-    }
-
-    // Initial setup
-    loadColors();
-    setupColorPickers();
-    fetchData();
-    setInterval(fetchData, 10000); // Refresh every 10 seconds
+      })
+      .catch(err => console.error("Error loading data:", err));
   </script>
+
 </body>
 </html>
 
