@@ -1,204 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Esports Scoreboard Overlay</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
-<style>
-  body {
-    margin: 0; background: #0a0a0a; color: #fff;
-    font-family: 'Orbitron', sans-serif;
-  }
-  #controls {
-    background: #111; padding: 10px; display: flex; gap: 10px; flex-wrap: wrap;
-  }
-  button {
-    background: #222; border: none; color: #fff; padding: 8px 12px; cursor: pointer; border-radius: 5px;
-  }
-  #customizePanel {
-    background: #222; padding: 10px; margin: 10px 0;
-  }
-  label {
-    margin-right: 10px;
-  }
-  input[type=color], select {
-    margin-right: 20px;
-    cursor: pointer;
-  }
-  #scoreboard {
-    padding: 20px;
-    max-width: 800px;
-    margin: auto;
-  }
-  table {
-    width: 100%; border-collapse: collapse; margin-top: 10px;
-  }
-  th, td {
-    padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;
-  }
-  tr {
-    animation: fadeIn 0.5s ease-in-out;
-  }
-  @keyframes fadeIn {
-    from {opacity:0; transform: translateY(10px);}
-    to {opacity:1; transform: translateY(0);}
-  }
-  .logo {
-    width: 40px; height: 40px; border-radius: 50%;
-  }
-  .alive-icons img {
-    width: 20px; height: 20px; margin-right: 4px;
-  }
-  .kills {
-    font-weight: bold; color: #ff5050; text-shadow: 0 0 5px #ff5050;
-  }
-  #overlayGraphic {
-    max-width: 100%;
-    margin-top: 10px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Esports Scoreboard Overlay with Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Orbitron', sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+    }
+
+    #controls {
+      padding: 10px;
+      background: #111;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      background: #222;
+      border: none;
+      color: #fff;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    #dashboard {
+      padding: 10px;
+      background: #222;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    label {
+      font-size: 14px;
+      margin-right: 6px;
+    }
+
+    input[type="color"] {
+      cursor: pointer;
+      width: 40px;
+      height: 28px;
+      border: none;
+      background: none;
+      padding: 0;
+    }
+
+    #scoreboard {
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    tr {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    .alive-icons img {
+      width: 20px;
+      height: 20px;
+      margin-right: 2px;
+    }
+
+    .kills {
+      font-weight: bold;
+      text-shadow: 0 0 5px #ff5050;
+    }
+  </style>
 </head>
 <body>
+  <div id="controls">
+    <button onclick="showOverlay('alive')">Show Alive Scoreboard</button>
+    <button onclick="showOverlay('top3')">Show Top 3 Alive</button>
+    <button onclick="showOverlay('eliminated')">Show Eliminated Teams</button>
+  </div>
 
-<div id="controls">
-  <button onclick="showOverlay('alive')">Alive Scoreboard</button>
-  <button onclick="showOverlay('top3')">Top 3 Alive</button>
-  <button onclick="showOverlay('eliminated')">Eliminated Teams</button>
-</div>
+  <div id="dashboard">
+    <label for="teamNameColor">Team Name Color:</label>
+    <input type="color" id="teamNameColor" name="teamNameColor" value="#00ff00" />
 
-<div id="customizePanel">
-  <label for="fontColor">Font Color:</label>
-  <input type="color" id="fontColor" value="#ffffff" onchange="updateStyles()" />
-  
-  <label for="fontSelect">Font:</label>
-  <select id="fontSelect" onchange="updateStyles()">
-    <option value="'Orbitron', sans-serif" selected>Orbitron</option>
-    <option value="'Arial', sans-serif">Arial</option>
-    <option value="'Courier New', monospace">Courier New</option>
-    <option value="'Tahoma', sans-serif">Tahoma</option>
-  </select>
-  
-  <label for="overlayInput">Overlay PNG:</label>
-  <input type="file" id="overlayInput" accept="image/png" onchange="loadOverlayGraphic(event)" />
-</div>
+    <label for="killsColor">Kills Color:</label>
+    <input type="color" id="killsColor" name="killsColor" value="#ff5050" />
 
-<div id="scoreboard">
-  <table id="scoreTable">
-    <thead>
-      <tr>
-        <th>Logo</th>
-        <th>Team</th>
-        <th>Alive</th>
-        <th>Kills</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <img id="overlayGraphic" alt="Overlay Graphic" style="display:none" />
-</div>
+    <label for="rowColor1">Row 1 BG Color:</label>
+    <input type="color" id="rowColor1" name="rowColor1" value="#111111" />
 
-<script>
-  // Your published Google Sheet CSV URL (update this)
-  const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSi8hg0w9o8dNFGzyNRNtuyS2L8JYeF5vNJerQzNGk0LPSXv1sUHkk5m6INRDVToXB5k7XlTphG3YuL/pub?gid=0&single=true&output=csv";
-  
-  const aliveIcon = "https://cdn-icons-png.flaticon.com/512/190/190411.png";
-  const deadIcon = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png";
+    <label for="rowColor2">Row 2 BG Color:</label>
+    <input type="color" id="rowColor2" name="rowColor2" value="#222222" />
+  </div>
 
-  let allTeams = [];
+  <div id="scoreboard">
+    <table id="scoreTable">
+      <thead>
+        <tr>
+          <th>Logo</th>
+          <th>Team</th>
+          <th>Alive</th>
+          <th>Kills</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  async function fetchData() {
-    try {
-      const res = await fetch(sheetUrl + "&timestamp=" + new Date().getTime()); // cache buster
+  <script>
+    const sheetUrl =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vSi8hg0w9o8dNFGzyNRNtuyS2L8JYeF5vNJerQzNGk0LPSXv1sUHkk5m6INRDVToXB5k7XlTphG3YuL/pub?gid=0&single=true&output=csv";
+    const aliveIcon = "https://cdn-icons-png.flaticon.com/512/190/190411.png";
+    const deadIcon = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png";
+
+    // Default colors (will be overwritten by localStorage or dashboard inputs)
+    let columnColors = {
+      name: "#00ff00",
+      kills: "#ff5050"
+    };
+
+    let rowColors = ["#111111", "#222222"];
+
+    // Fetch data from Google Sheet
+    async function fetchData() {
+      const res = await fetch(sheetUrl);
       const text = await res.text();
+      const rows = text.trim().split("\n").slice(37, 49); // rows E38–E49
 
-      const rows = text.trim().split("\n").slice(37, 49); // lines for rows E38-E49
-      
-      allTeams = rows.map(row => {
+      const allTeams = rows.map((row) => {
         const cols = row.split(",");
         return {
-          logo: cols[2],           // Column C (0-based index 2)
-          name: cols[4],           // Column E (index 4)
-          kills: parseInt(cols[6]) || 0, // Column G (index 6)
-          alive: parseInt(cols[25]) || 0 // Column Z (index 25)
+          logo: cols[2] || "",
+          name: cols[4] || "",
+          kills: parseInt(cols[6]) || 0,
+          alive: parseInt(cols[25]) || 0
         };
       });
-      showOverlay(currentOverlay);
-    } catch (err) {
-      console.error("Failed to fetch data", err);
-    }
-  }
 
-  let currentOverlay = 'alive';
-
-  function showOverlay(type) {
-    currentOverlay = type;
-    const tbody = document.querySelector("#scoreTable tbody");
-    tbody.innerHTML = "";
-
-    let filtered = [];
-    if (type === 'alive') {
-      filtered = allTeams;
-    } else if (type === 'top3') {
-      filtered = [...allTeams].sort((a,b) => b.alive - a.alive).slice(0,3);
-    } else if (type === 'eliminated') {
-      filtered = allTeams.filter(t => t.alive === 0);
+      window.allTeams = allTeams;
+      showOverlay("alive");
     }
 
-    filtered.forEach(team => {
-      const tr = document.createElement("tr");
+    // Render table
+    function showOverlay(type) {
+      const tbody = document.querySelector("#scoreTable tbody");
+      tbody.innerHTML = "";
 
-      const logoTd = document.createElement("td");
-      const img = document.createElement("img");
-      img.src = team.logo;
-      img.className = "logo";
-      logoTd.appendChild(img);
-      tr.appendChild(logoTd);
-
-      const nameTd = document.createElement("td");
-      nameTd.textContent = team.name;
-      tr.appendChild(nameTd);
-
-      const aliveTd = document.createElement("td");
-      const aliveDiv = document.createElement("div");
-      aliveDiv.className = "alive-icons";
-      for(let i=0; i<4; i++) {
-        const icon = document.createElement("img");
-        icon.src = i < team.alive ? aliveIcon : deadIcon;
-        aliveDiv.appendChild(icon);
+      let filtered = [];
+      if (type === "alive") {
+        filtered = window.allTeams;
+      } else if (type === "top3") {
+        filtered = [...window.allTeams]
+          .sort((a, b) => b.alive - a.alive)
+          .slice(0, 3);
+      } else if (type === "eliminated") {
+        filtered = window.allTeams.filter((t) => t.alive === 0);
       }
-      aliveTd.appendChild(aliveDiv);
-      tr.appendChild(aliveTd);
 
-      const killsTd = document.createElement("td");
-      killsTd.textContent = team.kills;
-      killsTd.className = "kills";
-      tr.appendChild(killsTd);
+      filtered.forEach((team, index) => {
+        const tr = document.createElement("tr");
+        // Apply alternating row background colors from dashboard
+        tr.style.backgroundColor = rowColors[index % rowColors.length];
 
-      tbody.appendChild(tr);
-    });
-  }
+        // Logo cell
+        const logoTd = document.createElement("td");
+        const img = document.createElement("img");
+        img.src = team.logo;
+        img.alt = team.name;
+        img.className = "logo";
+        logoTd.appendChild(img);
+        tr.appendChild(logoTd);
 
-  function updateStyles() {
-    const fontColor = document.getElementById("fontColor").value;
-    const fontFamily = document.getElementById("fontSelect").value;
-    document.body.style.color = fontColor;
-    document.body.style.fontFamily = fontFamily;
-  }
+        // Team name cell with dashboard color
+        const teamTd = document.createElement("td");
+        teamTd.textContent = team.name;
+        teamTd.style.color = columnColors.name;
+        tr.appendChild(teamTd);
 
-  function loadOverlayGraphic(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+        // Alive icons cell
+        const aliveTd = document.createElement("td");
+        const aliveDiv = document.createElement("div");
+        aliveDiv.className = "alive-icons";
+        for (let i = 0; i < 4; i++) {
+          const icon = document.createElement("img");
+          icon.src = i < team.alive ? aliveIcon : deadIcon;
+          icon.alt = i < team.alive ? "Alive" : "Dead";
+          if (i < team.alive) {
+            icon.style.filter = "drop-shadow(0 0 4px gold)";
+          }
+          aliveDiv.appendChild(icon);
+        }
+        aliveTd.appendChild(aliveDiv);
+        tr.appendChild(aliveTd);
 
-    const img = document.getElementById("overlayGraphic");
-    img.src = URL.createObjectURL(file);
-    img.style.display = "block";
-  }
+        // Kills cell with dashboard color
+        const killTd = document.createElement("td");
+        killTd.textContent = team.kills;
+        killTd.style.color = columnColors.kills;
+        killTd.className = "kills";
+        tr.appendChild(killTd);
 
-  // Initial fetch + repeat every 10 sec
-  fetchData();
-  setInterval(fetchData, 10000);
-</script>
+        tbody.appendChild(tr);
+      });
+    }
 
+    // Load colors from localStorage or set defaults
+    function loadColors() {
+      const storedNameColor = localStorage.getItem("teamNameColor");
+      const storedKillsColor = localStorage.getItem("killsColor");
+      const storedRowColor1 = localStorage.getItem("rowColor1");
+      const storedRowColor2 = localStorage.getItem("rowColor2");
+
+      if (storedNameColor) {
+        columnColors.name = storedNameColor;
+        document.getElementById("teamNameColor").value = storedNameColor;
+      }
+      if (storedKillsColor) {
+        columnColors.kills = storedKillsColor;
+        document.getElementById("killsColor").value = storedKillsColor;
+      }
+      if (storedRowColor1) {
+        rowColors[0] = storedRowColor1;
+        document.getElementById("rowColor1").value = storedRowColor1;
+      }
+      if (storedRowColor2) {
+        rowColors[1] = storedRowColor2;
+        document.getElementById("rowColor2").value = storedRowColor2;
+      }
+    }
+
+    // Save colors to localStorage
+    function saveColors() {
+      localStorage.setItem("teamNameColor", columnColors.name);
+      localStorage.setItem("killsColor", columnColors.kills);
+      localStorage.setItem("rowColor1", rowColors[0]);
+      localStorage.setItem("rowColor2", rowColors[1]);
+    }
+
+    // Setup color pickers event listeners
+    function setupColorPickers() {
+      document.getElementById("teamNameColor").addEventListener("input", (e) => {
+        columnColors.name = e.target.value;
+        saveColors();
+        showOverlay("alive");
+      });
+
+      document.getElementById("killsColor").addEventListener("input", (e) => {
+        columnColors.kills = e.target.value;
+        saveColors();
+        showOverlay("alive");
+      });
+
+      document.getElementById("rowColor1").addEventListener("input", (e) => {
+        rowColors[0] = e.target.value;
+        saveColors();
+        showOverlay("alive");
+      });
+
+      document.getElementById("rowColor2").addEventListener("input", (e) => {
+        rowColors[1] = e.target.value;
+        saveColors();
+        showOverlay("alive");
+      });
+    }
+
+    // Initial setup
+    loadColors();
+    setupColorPickers();
+    fetchData();
+    setInterval(fetchData, 10000); // Refresh every 10 seconds
+  </script>
 </body>
 </html>
+
